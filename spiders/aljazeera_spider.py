@@ -1,10 +1,13 @@
+import logging
 from selenium.webdriver.common.by import By
 
 from models.base import Item
-from spiders.base import BaseScraper, store_articles
-from parsel import Selector
+from spiders.base import BaseScraper
+from dateutil.parser import parse as date_parser
 
-SEARCH_PHRASE = "iran"
+from datetime import datetime, timedelta
+
+log = logging.getLogger(__name__)
 
 
 class AlJazeeraScraper(BaseScraper):
@@ -29,11 +32,6 @@ class AlJazeeraScraper(BaseScraper):
     article_date_xpath = './div//span[@class="screen-reader-text"]'
     article_image_xpath = './div[@class="gc__image-wrap"]//img'
 
-    article_full_title_xpath = '//div[@class="search-result__list"]/article[index:]//h3[@class="gc__title"]'
-    article_full_body_xpath = '//div[@class="search-result__list"]/article[index:]//div[@class="gc__body-wrap"]/text()'
-    article_full_date_xpath = '//div[@class="search-result__list"]/article[index:]//div[@class="screen-reader-text"]/text()'
-    article_full_image_xpath = '//div[@class="search-result__list"]/article[index:]//div[@class="gc__image-wrap"]/text()'
-
     items_per_page = 10
 
     # as no page loaded so far
@@ -41,6 +39,8 @@ class AlJazeeraScraper(BaseScraper):
 
     current_index = 1
     close_spider = True
+
+    stop_date = datetime.now() - timedelta(days=15)
 
     def get_start_url(self):
         search_phrase = 'uk'
@@ -50,15 +50,19 @@ class AlJazeeraScraper(BaseScraper):
         # self.input_search_phrase()
         self.accept_cookies()
         self.sort_by_latest()
-        while self.close_spider:
+        while True:
             articles = self.browser_get_articles()
             for item in self.extract_articles(articles):
                 self.store(item)
+
+            if self.close_spider:
+                break
             self.click_next_item()
             self.browser.wait_until_element_is_not_visible(self.loading_animation_xpath)
 
     def accept_cookies(self):
         self.browser.wait_and_click_button(self.cookie_button_xpath)
+        log.info("Cookie Accept button clicked")
 
     def input_search_phrase(self):
         """ Search input window  """
@@ -69,33 +73,46 @@ class AlJazeeraScraper(BaseScraper):
     def browser_get_articles(self):
         results = self.wait_for_element_and_get_result(self.search_results_xpath, max_retries=5)
         self.page = self.page + 1
+        log.info(f"Current page={self.page}")
         return results[self.page * self.items_per_page: (self.page + 1) * self.items_per_page]
 
     def sort_by_latest(self):
         self.wait_for_element_and_get_result(self.sort_by_xpath, max_retries=5)
         self.browser.select_from_list_by_value(self.sort_by_select_xpath, 'date')
+        log.info(f"Sort by latest")
 
     def click_next_item(self):
-        # if self.browser.wait_until_page_contains('Show more'):
-        # self.wait_for_element_and_get_result(self.click_next_button_xpath)
         self.browser.execute_javascript("window.scrollTo(0, document.body.scrollHeight);")
-
         if self.browser.is_element_visible(self.click_next_button_xpath):
             self.browser.click_element_when_clickable(self.click_next_button_xpath)
+        log.info(f"Next button clicked")
 
     # @store_articles
     def extract_articles(self, articles):
-
         for article in articles:
             title = article.find_element(By.XPATH, self.article_title_xpath).text
             description = article.find_element(By.XPATH, self.article_description_xpath).text
+            publish_date_str = description.split('...')[0]
+            try:
+                publish_date = date_parser(publish_date_str, fuzzy=True)
+            except Exception as e:
+                print("Invalid Date")
 
-            publish_date = article.find_element(By.XPATH, self.article_date_xpath).text if article.find_elements(By.XPATH, self.article_date_xpath) else None
-            image_path = article.find_element(By.XPATH, self.article_image_xpath).get_attribute('src')
-            image_path = image_path.split('?')[0]
-            if 'http' not in image_path:
-                image_path = self.domain + image_path
+            log.info(f"Check Stop date {self.stop_date} >= {publish_date}: {self.stop_date >= publish_date}")
+            if self.stop_date >= publish_date:
+                log.info("Content found till required date")
+                self.close_spider = True
 
+            image_url = article.find_element(By.XPATH, self.article_image_xpath).get_attribute('src')
+            # image_url = image_url.split('?')[0]
+            if 'http' not in image_url:
+                image_url = self.domain + image_url
+            image_path = self.download_image(image_url)
             print(title, description, publish_date, image_path)
-            item = Item(title, description, image_path, publish_date)
+            item = Item(
+                title=title,
+                description=description,
+                image_path=image_path,
+                publish_date=publish_date
+            )
             yield item

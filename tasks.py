@@ -107,7 +107,6 @@ class LaTimes:
                     title_locator = f"({locate.search_result})[{i + 1}]{locate.title}"
                     disc_locator = f"({locate.search_result})[{i + 1}]{locate.description}"
                     img_locator = f"({locate.search_result})[{i + 1}]{locate.image}"
-                    time.sleep(3)
                     date = self.browser_lib.get_text(date_locator)
                     title = self.browser_lib.get_text(title_locator)
                     result = re.search("\$(\w+)", title)
@@ -150,6 +149,5 @@ if __name__ == "__main__":
 
     scraper = AlJazeeraScraper()
     scraper.main()
-
     # ny_time = LaTimes()
     # ny_time.main()
