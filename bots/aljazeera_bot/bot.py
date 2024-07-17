@@ -1,9 +1,9 @@
 import logging
 
-from bots.aljazeera_bot.constants import ALJAZEERA_DATE_SEPARATORS, ALJAZEERA_SCRAPE_URL
-from bots.aljazeera_bot import AljazeeraModel
+from bots.aljazeera_bot.constants import ALJAZEERA_DATE_SEPARATORS, ALJAZEERA_SCRAPE_URL, ITEMS_PER_PAGE
+from bots.aljazeera_bot.model import AljazeeraModel
 from bots import BaseScraper
-from bots.aljazeera_bot import XpathSelectors
+from bots.aljazeera_bot.selectors import XpathSelectors
 
 from dateutil.parser import parse as date_parser, ParserError
 from selenium.webdriver.common.by import By
@@ -18,8 +18,7 @@ class AlJazeeraScraper(BaseScraper, XpathSelectors):
     domain = ALJAZEERA_SCRAPE_URL
 
     page = -1
-    current_index = 1
-    items_per_page = 10
+    items_per_page = ITEMS_PER_PAGE
 
     close_spider = False
 
@@ -81,6 +80,8 @@ class AlJazeeraScraper(BaseScraper, XpathSelectors):
     def extract_articles(self, articles):
         """Extract information from each article element."""
         for article in articles:
+            
+            #
             title = article.find_element(By.XPATH, self.article_title_xpath).text
             description = article.find_element(By.XPATH, self.article_description_xpath).text
             if ALJAZEERA_DATE_SEPARATORS not in description:

@@ -6,11 +6,8 @@ from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
 from selenium.common import NoSuchElementException
 from RPA.Robocorp.WorkItems import WorkItems
-import logging
-
+from configs import logger as log
 from constants import MONTH, SEARCH_PHRASE
-
-log = logging.getLogger(__name__)
 
 
 def store_articles(func):
@@ -84,8 +81,8 @@ class BaseScraper:
 
     def load_workitems(self, config):
         """Load work items for processing."""
-        self.set_search_phrase(config.get(SEARCH_PHRASE))
-        self.set_month(config.get(MONTH))
+        self.set_search_phrase(config.search_phrase)
+        self.set_month(config.month)
 
     ##############################
     #  SCRAPING                  #

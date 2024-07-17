@@ -5,3 +5,5 @@ TITLE_KEY = 'title'
 DESCRIPTION_KEY = 'description'
 IMAGE_PATH = 'image_path'
 PUBLISH_DATE = 'publish_date'
+
+ITEMS_PER_PAGE = 10
