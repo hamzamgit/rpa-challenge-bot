@@ -1,5 +1,5 @@
 import os
-from spiders.aljazeera_spider import AlJazeeraScraper
+from bots.aljazeera_news_bot import AlJazeeraScraper
 
 
 if __name__ == "__main__":

@@ -1,18 +1,15 @@
 import os
-import re
 
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
-from SeleniumLibrary.errors import ElementNotFound
 from selenium.common import NoSuchElementException
 from RPA.Robocorp.WorkItems import WorkItems
-from selenium.webdriver.common.by import By
 
 import logging
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def store_articles(func):
@@ -32,7 +29,7 @@ class BaseScraper:
         self.work_item_lib = WorkItems()
         self.http = HTTP()
         self.excel = Files()
-        self.excel.create_workbook()
+        # self.excel.create_workbook()
         self.work_items = WorkItems()
         self.data = []
 
@@ -40,12 +37,8 @@ class BaseScraper:
         """Main method to start the scraping process."""
         start_url = self.get_start_url()
         self.open_browser(start_url)
-        try:
-            self.parse()
-        except Exception as e:
-            logger.error(f"Error during parsing: {e}")
-        finally:
-            self.close_browser()
+        self.parse()
+        self.close_browser()
 
     ##############################
     #  BROWSER                   #
@@ -83,7 +76,7 @@ class BaseScraper:
 
     def close_browser(self):
         """Close the browser and convert collected data to Excel."""
-        logger.warning("Closing scraper")
+        log.warning("Closing scraper")
         self.browser.close_all_browsers()
         self.convert_to_excel()
 
@@ -110,16 +103,48 @@ class BaseScraper:
         tries = max_retries
         while tries > 0:
             try:
-                if self.browser.find_element(xpath):
-                    return self.browser.find_elements(xpath)
+                log.debug("FINDING ELEMENT")
+                self.browser.scroll_element_into_view(xpath)
+                if result := self.browser.find_element(xpath):
+                    log.debug("ELEMENT FOUND AND RETURN")
+                    return result
                 self.browser.wait_until_element_is_visible(xpath)
-            except (AssertionError, NoSuchElementException) as e:
-                logger.error(f"Error finding element with xpath='{xpath}': {e}")
+            except Exception as e:
+                log.error(f"Error finding element with xpath='{xpath}': {e}")
+            tries -= 1
+            print("TRIES ARE HERE", tries)
+        raise NoSuchElementException(f"Element not found for xpath='{xpath}'")
+
+    def wait_for_element_and_get_results(self, xpath, max_retries=5):
+        """Wait for an elements to be visible and return its results.
+
+        Args:
+            xpath (str): The XPath of the element.
+            max_retries (int): Maximum number of retries for waiting.
+
+        Returns:
+            list: List of elements found.
+
+        Raises:
+            NoSuchElementException: If the element is not found after retries.
+        """
+
+        tries = max_retries
+        while tries > 0:
+            try:
+                log.debug("FINDING ELEMENT")
+                self.browser.wait_until_element_is_visible(xpath)
+                self.browser.scroll_element_into_view(xpath)
+                if results := self.browser.find_elements(xpath):
+                    log.debug("ELEMENT FOUND AND RETURN")
+                    return results
+            except Exception as e:
+                log.error(f"Error finding element with xpath='{xpath}': {e}")
             tries -= 1
         raise NoSuchElementException(f"Element not found for xpath='{xpath}'")
 
     ##############################
-    #  ARTICLE STORE             #
+    #  STORE ARTICLE             #
     ##############################
     def download_image(self, url):
         """Download image from a URL.
@@ -136,21 +161,23 @@ class BaseScraper:
 
     def convert_to_excel(self):
         """Convert the collected data to an Excel file."""
-        self.excel.create_workbook()
-        headers = ["Title", "Date", "Description", "Image File", "Search Phrase Count", "Contains Money"]
+        if not self.data:
+            return
+        self.excel.create_workbook(fmt='xlsx',path='output/Articles.xlsx', sheet_name="News")
+        headers = ["Title", "Date", "Description", "Image File", "Search Phrase Count", "Contains Money"]  # generic, Broader ExceptionAvoid, Remove while True use recursion
         self.excel.append_rows_to_worksheet([headers], "News")
 
         for article in self.data:
             row = [
-                article["title"],
-                article["date"].strftime("%Y-%m-%d"),
-                article["description"],
-                article["image_path"],
+                article.title,
+                article.publish_date.strftime("%Y-%m-%d"),
+                article.description,
+                article.image_path,
                 article.count_search_phrases(self.search_phrase),
                 article.contains_money
             ]
             self.excel.append_rows_to_worksheet([row], "News")
-        self.excel.close_workbook()
+        self.excel.save_workbook()
 
     def store(self, item):
         """Store an item in the data list.
