@@ -1,13 +1,15 @@
 import os
+from datetime import datetime, timedelta
 
+from robocorp import workitems
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
 from selenium.common import NoSuchElementException
 from RPA.Robocorp.WorkItems import WorkItems
-
 import logging
 
+from constants import TITLE_KEY, DESCRIPTION_KEY, IMAGE_PATH, PUBLISH_DATE, MONTH, SEARCH_PHRASE
 
 log = logging.getLogger(__name__)
 
@@ -23,15 +25,17 @@ def store_articles(func):
 
 
 class BaseScraper:
-    def __init__(self):
+
+    data = []
+
+    def __init__(self, config=None):
         """Initialize the BaseScraper with necessary components."""
         self.browser = Selenium()
-        self.work_item_lib = WorkItems()
         self.http = HTTP()
         self.excel = Files()
-        # self.excel.create_workbook()
         self.work_items = WorkItems()
-        self.data = []
+        # self.config = config
+        self.load_workitems(config)
 
     def main(self):
         """Main method to start the scraping process."""
@@ -41,11 +45,29 @@ class BaseScraper:
         self.close_browser()
 
     ##############################
-    #  BROWSER                   #
+    #  CONFIGS                   #
     ##############################
+    @property
     def get_start_url(self):
         """Return the starting URL for scraping."""
-        return self.start_url
+        if hasattr(self, 'start_url'):
+            return self.start_url
+        raise ValueError("start_url is not configured")
+
+    def set_search_phrase(self, search_phrase):
+        if not search_phrase:
+            raise ValueError("search_phrase is not configured")
+        self.search_phrase = search_phrase
+
+    def set_month(self, month):
+        try:
+            self.month = float(month)
+        except TypeError as e:
+            raise ValueError("month should be an Integer/Float rather string")
+
+    @property
+    def stop_date(self):
+        return datetime.now() - timedelta(days=30 * self.month)
 
     def parse(self):
         """Method to be implemented by subclasses for parsing logic."""
@@ -80,9 +102,12 @@ class BaseScraper:
         self.browser.close_all_browsers()
         self.convert_to_excel()
 
-    def load_workitems(self):
+    def load_workitems(self, config):
         """Load work items for processing."""
-        self.work_items.get_work_item_payload()
+        self.set_search_phrase(config.get(SEARCH_PHRASE))
+        self.set_month(config.get(MONTH))
+
+        # self.work_items.get_work_item_payload()
 
     ##############################
     #  SCRAPING                  #
@@ -186,3 +211,21 @@ class BaseScraper:
             item (dict): The item to store.
         """
         self.data.append(item)
+
+    def create_work_item_payloads(traffic_data):
+        payloads = []
+        for row in traffic_data:
+            payload = dict(
+                title=row[TITLE_KEY],
+                description=row[DESCRIPTION_KEY],
+                image_path=row[IMAGE_PATH],
+                publish_date=row[PUBLISH_DATE],
+            )
+            payloads.append(payload)
+        return payloads
+
+    def save_work_item_payloads(payloads):
+        for payload in payloads:
+            variables = dict(traffic_data=payload)
+            print(payload)
+            workitems.outputs.create(variables)

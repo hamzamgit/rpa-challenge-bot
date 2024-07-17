@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timedelta
 
 from constants import ALJAZEERA_DATE_SEPARATORS, ALJAZEERA_SCRAPE_URL
 from models.base import Item
@@ -18,16 +17,16 @@ class AlJazeeraScraper(BaseScraper):
     search_url = '{site_url}search/{search}'
     domain = ALJAZEERA_SCRAPE_URL
 
-    items_per_page = 10
     page = -1
     current_index = 1
+    items_per_page = 10
+
     close_spider = False
-    stop_date = datetime.now() - timedelta(days=15)
 
     def get_start_url(self):
         """Return the formatted start URL for the search."""
-        self.search_phrase = 'uk'
-        return self.search_url.format(search=self.search_phrase, site_url=ALJAZEERA_SCRAPE_URL)
+        search_phrase = self.search_phrase
+        return self.search_url.format(search=search_phrase, site_url=ALJAZEERA_SCRAPE_URL)
 
     def parse(self):
         """Parse the website to extract article data."""
