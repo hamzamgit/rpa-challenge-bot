@@ -1,1 +1,0 @@
-from .aljazeera_selectors import AljazeeraSelectors

@@ -1,7 +1,6 @@
 import os
 from datetime import datetime, timedelta
 
-from robocorp import workitems
 from RPA.Browser.Selenium import Selenium
 from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
@@ -9,7 +8,7 @@ from selenium.common import NoSuchElementException
 from RPA.Robocorp.WorkItems import WorkItems
 import logging
 
-from constants import TITLE_KEY, DESCRIPTION_KEY, IMAGE_PATH, PUBLISH_DATE, MONTH, SEARCH_PHRASE
+from constants import MONTH, SEARCH_PHRASE
 
 log = logging.getLogger(__name__)
 
@@ -75,26 +74,7 @@ class BaseScraper:
 
     def open_browser(self, link):
         """Open the browser with specified options and link."""
-        options = {
-            "arguments": [
-                "--disable-gpu",
-                "--disable-extensions",
-                "--disable-dev-shm-usage",
-                "--no-sandbox",
-                "--disable-infobars",
-                "--disable-animations",
-                "--disable-images"
-            ],
-            "capabilities": {
-                "goog:chromeOptions": {
-                    "prefs": {
-                        "profile.managed_default_content_settings.images": 2,  # Disable images
-                        "profile.default_content_setting_values.notifications": 2  # Disable notifications
-                    }
-                }
-            }
-        }
-        self.browser.open_available_browser(link, options=options)
+        self.browser.open_available_browser(link)
 
     def close_browser(self):
         """Close the browser and convert collected data to Excel."""
@@ -106,8 +86,6 @@ class BaseScraper:
         """Load work items for processing."""
         self.set_search_phrase(config.get(SEARCH_PHRASE))
         self.set_month(config.get(MONTH))
-
-        # self.work_items.get_work_item_payload()
 
     ##############################
     #  SCRAPING                  #
@@ -188,7 +166,7 @@ class BaseScraper:
         """Convert the collected data to an Excel file."""
         if not self.data:
             return
-        self.excel.create_workbook(fmt='xlsx',path='output/Articles.xlsx', sheet_name="News")
+        self.excel.create_workbook(fmt='xlsx', path='output/Articles.xlsx', sheet_name="News")
         headers = ["Title", "Date", "Description", "Image File", "Search Phrase Count", "Contains Money"]  # generic, Broader ExceptionAvoid, Remove while True use recursion
         self.excel.append_rows_to_worksheet([headers], "News")
 
@@ -212,20 +190,3 @@ class BaseScraper:
         """
         self.data.append(item)
 
-    def create_work_item_payloads(traffic_data):
-        payloads = []
-        for row in traffic_data:
-            payload = dict(
-                title=row[TITLE_KEY],
-                description=row[DESCRIPTION_KEY],
-                image_path=row[IMAGE_PATH],
-                publish_date=row[PUBLISH_DATE],
-            )
-            payloads.append(payload)
-        return payloads
-
-    def save_work_item_payloads(payloads):
-        for payload in payloads:
-            variables = dict(traffic_data=payload)
-            print(payload)
-            workitems.outputs.create(variables)
