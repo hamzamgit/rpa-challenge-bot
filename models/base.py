@@ -6,14 +6,14 @@ from datetime import datetime
 
 @dataclass
 class BaseItem:
-    title: str
-    description: str
-    image_path: str
-    publish_date: datetime
-    article_url: str = ''
-    scrap_date: str = datetime.now()
+    title:          str
+    description:    str
+    image_path:     str
+    publish_date:   datetime
+    article_url:    str = ''
+    scrap_date:     str = datetime.now()
 
-    def add_value(self,name, value):
+    def add_value(self, name, value):
         if hasattr(self, name):
             setattr(self, name, value)
         raise AttributeError(f"{name:} not specified")

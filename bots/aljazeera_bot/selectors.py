@@ -1,9 +1,9 @@
 
 class XpathSelectors:
     cookie_button_xpath = '//button[@id="onetrust-accept-btn-handler"]'
-    search_icon_xpath = '//div[@class="site-header__search-trigger"]'
+    search_icon_xpath = '//div[@class="site-header__search-trigger"]/button'
     search_input_xpath = '//input[@class="search-bar__input"]'
-    search_submit = '//div[@class="search-bar__button"]/button'
+    search_submit_xpath = '//div[@class="search-bar__button"]/button'
     search_results_xpath = '//div[@class="search-result__list"]/article'
     sort_by_xpath = '//div[@class="search-summary"]'
     sort_by_select_xpath = '//select[@id="search-sort-option"]'
