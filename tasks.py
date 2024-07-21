@@ -26,5 +26,3 @@ def run_news_scraper_bot():
     scraper.main()
     logger.info("Task Completed")
 
-
-run_news_scraper_bot()
