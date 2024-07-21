@@ -17,4 +17,3 @@ class AljazeeraModel(BaseItem):
             r"\d+\s+USD"
         )
         return bool(money_pattern.search(f"{self.title} {self.description}"))
-

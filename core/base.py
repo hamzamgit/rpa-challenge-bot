@@ -93,7 +93,7 @@ class StorageMixin:
 
         for article in self.scraped_data:
             # Prepare a row for each article
-            row = article.load_items().values()
+            row = list(article.load_items().values())
 
             # Append the row to the Excel sheet
             self.excel.append_rows_to_worksheet([row], SHEET_NAME)

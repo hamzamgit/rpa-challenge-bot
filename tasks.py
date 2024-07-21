@@ -20,7 +20,6 @@ def pre_configs():
 def run_news_scraper_bot():
     config = pre_configs()
     logger.info("Task Started")
-    # x = AljazeeraModel(title='title', search_phrase='de', description='descr 10 USD', image_path='path', publish_date=datetime.datetime.now())
 
     scraper = AlJazeeraScraper(config=config)
     scraper.main()
