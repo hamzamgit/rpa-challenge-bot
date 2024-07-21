@@ -100,6 +100,7 @@ class StorageMixin:
 
         # Save the Excel workbook
         self.excel.save_workbook()
+        log.info(f"Excel file generated at {self.excel_path}")
 
     def store_item(self, item):
         # Method to store a scraped item in the class variable list
