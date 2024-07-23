@@ -17,12 +17,6 @@ The template provides you with the basic structure of a Python project: logging 
 1. [Get RCC](https://github.com/robocorp/rcc?tab=readme-ov-file#getting-started)
 1. Use the command: `rcc run`
 
-## Command line
-Create Workitems
-```
-python -m scripts.create_work_item
-```
-
 ## Results
 
 🚀 After running the bot, check out the `log.html` under the `output` -folder.
@@ -49,6 +43,11 @@ Think of [conda.yaml](conda.yaml) as an equivalent of the requirements.txt, but 
 
 </details>
 <br/>
+
+### Workitems
+#### Required Environment Variables
+- `SEARCH_PHRASE`: The search phrase to be used in the automation.
+- `MONTH`: The number of months to extract the content.
 
 > The full power of [rpaframework](https://robocorp.com/docs/python/rpa-framework) -libraries is also available on Python as a backup while we implement the new Python libraries.
 
