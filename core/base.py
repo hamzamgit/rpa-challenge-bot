@@ -203,7 +203,7 @@ class BaseScraper(StorageMixin):
 
         self.set_month(config.month)
 
-    def element_is_visible(self, xpath: str, max_retries: int = 5) -> bool:
+    def element_is_visible(self, xpath: str, max_retries: int = 5, raise_exception: bool=True) -> bool:
         """
         Checks if an element identified by XPath is visible on the page.
 
@@ -234,7 +234,9 @@ class BaseScraper(StorageMixin):
             # Base case: If no retries left, raise exception
             if tries == 0:
                 # No more tries, Exit as Xpath is invalid.
-                raise NoSuchElementException(f"Element not found for xpath='{xpath}'")
+                if raise_exception:
+                    raise NoSuchElementException(f"Element not found for xpath='{xpath}'")
+                return False
 
             try:
                 log.debug(f"Finding element {xpath}")

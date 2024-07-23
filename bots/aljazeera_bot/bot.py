@@ -89,7 +89,7 @@ class AlJazeeraScraper(BaseScraper, XpathSelectors):
     def click_next_item(self):
         # Scroll to the bottom of the page and click the next button if visible
         self.browser.execute_javascript("window.scrollTo(0, document.body.scrollHeight);")
-        if self.element_is_visible(self.click_next_button_xpath):
+        if self.element_is_visible(self.click_next_button_xpath, raise_exception=False):
             self.browser.click_element_when_clickable(self.click_next_button_xpath)
             log.debug("Next button clicked")
             self.browser.wait_until_element_is_not_visible(self.loading_animation_xpath, timeout=5)
@@ -126,29 +126,29 @@ class AlJazeeraScraper(BaseScraper, XpathSelectors):
 
     def extract_articles(self, articles):
         """
-        Extracts information from each article element and yields an AljazeeraModel item.
+        Extracts information from each article element and yields an BaseModel inherited item.
 
         Args:
             articles (list): List of article elements to extract information from.
 
         Yields:
-            AljazeeraModel: An instance of AljazeeraModel containing extracted article information.
+            Model: An inherited instance of BaseModel containing extracted article information.
 
         Optimizations:
             - Added comments to clarify each step in the function.
             - Removed unnecessary comments that merely restated the code.
         """
         for article in articles:
-            # Extract article description
-            description = article.find_element(By.XPATH, self.article_description_xpath).text
+            # Extract description and publish date form article,
+            title_description = article.find_element(By.XPATH, self.article_description_xpath).text
 
             # Skip articles without publish date in the description
-            if ALJAZEERA_DATE_SEPARATORS not in description:
-                log.error(f"Article does not contain Publish Date description: {description}")
+            if ALJAZEERA_DATE_SEPARATORS not in title_description:
+                log.error(f"Article does not contain Publish Date description: {title_description}")
                 continue
 
-            # Extract and parse publish date from the description
-            publish_date_str = self.get_publish_date(description)
+            # separate publish date and description from description text
+            publish_date_str, description = [x.strip() for x in title_description.split(ALJAZEERA_DATE_SEPARATORS, 1)]
             publish_date = parse_date_string(publish_date_str)
 
             # Check if the article's publish date is beyond the stop date
@@ -177,10 +177,6 @@ class AlJazeeraScraper(BaseScraper, XpathSelectors):
                 search_phrase=self.search_phrase
             )
             yield item  # Yield the extracted article item
-
-    def get_publish_date(self, text) -> str:
-        # extract publish date from Description.
-        return text.split(ALJAZEERA_DATE_SEPARATORS)[0]
 
     def get_image_path(self, image_url) -> str:
         # Add domain to the relative image src
